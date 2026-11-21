@@ -194,6 +194,10 @@ td.break .sub { font-size: 11.5px; font-weight: 500; color: var(--muted); white-
 body.print .nav, body.print .dias { display: none !important; }
 .bar.fx span { color: #fff; font-size: 12px; }
 .fx-title { margin: 6px 0 -6px; font-family: var(--font-display); font-weight: 700; font-size: 17px; letter-spacing: .05em; text-transform: uppercase; }
+th .sm { display: none; }
+td.nome .nm { font-weight: 600; }
+td.nome .hours { font-weight: 400; font-size: 13px; color: var(--muted); margin-top: 2px; }
+table { table-layout: auto; }
 .notes { color: var(--muted); font-size: 13.5px; display: flex; flex-direction: column; gap: 3px; }
 .notes strong { color: var(--fg); font-weight: 600; }
 
@@ -206,6 +210,19 @@ body.print .nav, body.print .dias { display: none !important; }
   td.hours { font-size: 12.5px; }
   .pill { padding: 3px 9px; font-size: 13px; }
 }
+@media (max-width: 560px) {
+  .table-scroll { overflow-x: visible; }
+  body th .lg { display: none; } th .sm { display: inline; }
+  body thead th { font-size: 12.5px; padding: 9px 4px; letter-spacing: .03em; }
+  body thead th:first-child { padding-left: 10px; }
+  body tbody td { padding: 8px 3px; font-size: 14px; }
+  body tbody td:first-child { padding-left: 10px; white-space: normal; }
+  body td.nome .nm { font-size: 14.5px; line-height: 1.15; }
+  body td.nome .hours { font-size: 11.5px; white-space: nowrap; }
+  body td.break { font-size: 14px; }
+  body tbody td .pill { padding: 3px 7px; font-size: 12px; }
+}
+@media (max-width: 360px) { body tbody td .pill { padding: 2px 5px; font-size: 11px; }body thead th { font-size: 11.5px; } }
 </style>
 
 <div class="wrap">
@@ -291,11 +308,11 @@ function drawChart() {
   var people = [];
   rows.forEach(function (tr) {
     var td = tr.children;
-    var h = td[1].textContent.split("–");
+    var h = tr.dataset.h.split("–");
     var st = toMin(h[0]), en = toMin(h[1]); if (en <= st) en += 1440;
-    var bm = (td[3].dataset.br || td[3].textContent).match(/\d{1,2}:\d{2}/); var br = bm ? toMin(bm[0]) : NaN; if (isNaN(br)) br = en; else if (br < st) br += 1440;
+    var bm = (td[2].dataset.br || td[2].textContent).match(/\d{1,2}:\d{2}/); var br = bm ? toMin(bm[0]) : NaN; if (isNaN(br)) br = en; else if (br < st) br += 1440;
     var nv = function (x) { x = x.trim(); return x.indexOf("Vagas") === 0 ? "Vagas" : x; };
-    people.push({ st: st, en: en, br: br, a: nv(td[2].textContent), d: nv(td[4].textContent) });
+    people.push({ st: st, en: en, br: br, a: nv(td[1].textContent), d: nv(td[3].textContent) });
   });
   if (!people.length) return;
   var T0 = Math.min.apply(null, people.map(function (p) { return p.st; }));
@@ -441,13 +458,14 @@ function drawChart() {
     var frag = document.createDocumentFragment();
     var h = el("h2", "team"); var i = el("i"); i.style.background = cor; h.appendChild(i); h.appendChild(document.createTextNode(titulo)); frag.appendChild(h);
     var wrap = el("div", "table-scroll"), t = el("table"), th = el("thead"), tr = el("tr");
-    ["Colaborador", "Horário", "Antes do intervalo", "Intervalo", "Depois do intervalo"].forEach(function (x) { tr.appendChild(el("th", null, x)); });
+    [["Colaborador", "Nome"], ["Antes do intervalo", "Antes"], ["Intervalo", "Interv."], ["Depois do intervalo", "Depois"]].forEach(function (x) {
+      var c = el("th"); c.appendChild(el("span", "lg", x[0])); c.appendChild(el("span", "sm", x[1])); tr.appendChild(c);
+    });
     th.appendChild(tr); t.appendChild(th);
     var tb = el("tbody");
     linhas.forEach(function (r) {
-      var row = el("tr");
-      row.appendChild(el("td", null, r.n));
-      row.appendChild(el("td", "hours", r.h));
+      var row = el("tr"); row.dataset.h = r.h;
+      var nm = el("td", "nome"); nm.appendChild(el("div", "nm", r.n)); nm.appendChild(el("div", "hours", r.h)); row.appendChild(nm);
       var a = el("td"); a.appendChild(pill(r.a)); row.appendChild(a);
       row.appendChild(el("td", "break", r.br));
       var d = el("td"); d.appendChild(pill(r.d)); row.appendChild(d);
